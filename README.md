@@ -13,3 +13,48 @@ go get github.com/cboudereau/errgroupsem
 
 ## Example
 See the unit tests for little and channel based demo
+
+```go
+// Fan-in / Fan-out example
+ctx := context.Background()
+
+numCPU := runtime.NumCPU()
+
+// one main errgroupsem g instance
+g, ctx := errgroupsem.WithContext(ctx, numCPU)
+
+producer := func(size int) <-chan string {
+	output := make(chan string)
+	g.Go(ctx, func() error {
+		defer close(output)
+		// another degree of paralellism with another errgroupsem instance
+		wg, ctx := errgroupsem.WithContext(ctx, numCPU)
+
+		for i := 0; i < size; i++ {
+			i := i //golang closure issue
+			wg.Go(ctx, func() error {
+				s := int64(rand.Intn(100))
+				time.Sleep(time.Millisecond * time.Duration(s))
+				output <- fmt.Sprintf("%v/%vms", i, s)
+				return nil
+			})
+		}
+		return wg.Wait()
+	})
+
+	return output
+}
+
+consumer := func(input <-chan string) {
+	g.Go(ctx, func() error {
+		for x := range input {
+			fmt.Println("consumer", x)
+		}
+		return nil
+	})
+}
+
+consumer(producer(100))
+
+g.Wait()
+```
