@@ -27,7 +27,7 @@ producer := func(size int) <-chan string {
 	output := make(chan string)
 	g.Go(ctx, func() error {
 		defer close(output)
-		// another degree of paralellism with another errgroupsem instance
+		// another degree of parallelism with another errgroupsem instance
 		wg, ctx := errgroupsem.WithContext(ctx, numCPU)
 
 		for i := 0; i < size; i++ {
