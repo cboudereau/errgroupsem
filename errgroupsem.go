@@ -47,8 +47,8 @@ func (g *ErrGroupSem) Go(ctx context.Context, f func() error) {
 	g.wg.Add(1)
 
 	go func() {
-		defer g.sem.Release(1)
 		defer g.wg.Done()
+		defer g.sem.Release(1)
 
 		if err := f(); err != nil {
 			g.markFailed(err)
