@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"math/rand"
+	"runtime"
 	"testing"
 	"time"
 
@@ -30,13 +31,14 @@ func TestErrGroupSem(t *testing.T) {
 func TestFanInFanOutExample(t *testing.T) {
 	ctx := context.Background()
 
-	g, ctx := errgroupsem.WithContext(ctx, 10)
+	numCPU := runtime.NumCPU()
+	g, ctx := errgroupsem.WithContext(ctx, numCPU)
 
 	producer := func(size int) <-chan string {
 		output := make(chan string)
 		g.Go(ctx, func() error {
 			defer close(output)
-			wg, ctx := errgroupsem.WithContext(ctx, 10)
+			wg, ctx := errgroupsem.WithContext(ctx, numCPU)
 
 			for i := 0; i < size; i++ {
 				i := i //golang closure issue
